@@ -1,4 +1,4 @@
-package com.jbsoft.unoserver.game;
+package com.jbsoft.unoserver.game.model;
 
 
 import java.util.Objects;
@@ -89,6 +89,7 @@ public class Card  {
         NUMBER,
         REVERSE,
         SKIP,
+        WILD
     }
 
     public enum Color {

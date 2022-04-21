@@ -1,6 +1,10 @@
-package com.jbsoft.unoserver.game;
+package com.jbsoft.unoserver.game.services;
 
 import com.jbsoft.unoserver.Response;
+import com.jbsoft.unoserver.game.utility.GameDataInit;
+import com.jbsoft.unoserver.game.model.Card;
+import com.jbsoft.unoserver.game.model.ResponseImpl;
+import com.jbsoft.unoserver.game.model.Player;
 import com.jbsoft.unoserver.websocket.model.GameData;
 
 import java.io.IOException;
@@ -12,13 +16,15 @@ import java.util.Stack;
 public class Game {
     private final String roomId;
     private final List<Player> players = new ArrayList<>();
+    private final Stack<Card> playedCards = new Stack<>();
     private String ownerUserName;
     private Stack<Card> deck;
-    private Stack<Card> playedCards = new Stack<>();
     private int playerIdCounter = 1;
     private boolean running = false;
     private State state = State.NOT_STARTED;
     private int playerTurn = 1;
+    private Direction direction = Direction.LEFT;
+    private Color wildChosenColor = Color.NONE;
 
     public Game(String roomId, String ownerUserName) {
         this.roomId = roomId;
@@ -59,12 +65,12 @@ public class Game {
         player.setSessionId(sessionId);
     }
 
-    public DataResponse getPlayerConfig(String sessionId) {
+    public ResponseImpl getPlayerConfig(String sessionId) {
         return findPlayerBySessionId(sessionId).getConfig();
     }
 
-    public DataResponse getState() {
-        return new DataResponse.ResponseBuilder()
+    public ResponseImpl getState() {
+        return new ResponseImpl.ResponseBuilder()
                 .type(Response.Type.STATE)
                 .roomId(roomId)
                 .ownerUsername(ownerUserName)
@@ -72,6 +78,7 @@ public class Game {
                 .state(state.toString())
                 .playerTurn(playerTurn)
                 .gameStarted(running)
+                .wildChosenColor(wildChosenColor.toString())
                 .build();
     }
 
@@ -93,14 +100,15 @@ public class Game {
         return cards;
     }
 
-    private List<DataResponse> init() {
-        List<DataResponse> responses = new ArrayList<>();
+    private List<ResponseImpl> init() {
+        List<ResponseImpl> responses = new ArrayList<>();
         for (Player p : players) {
             List<Card> cards = drawCards(7);
             p.addCardsToHand(cards);
+            cards.add(deck.stream().filter(c -> c.getType().equals(Card.Type.DRAW4)).findFirst().get());
 
             System.out.println("cardsize" + cards.size());
-            responses.add(new DataResponse.ResponseBuilder()
+            responses.add(new ResponseImpl.ResponseBuilder()
                     .type(Response.Type.DRAW)
                     .username(p.getUsername())
                     .sessionId(p.getSessionId())
@@ -112,31 +120,48 @@ public class Game {
     }
 
     private boolean validPlay(Player player, Card card) {
-        if(playedCards.isEmpty()) return true;
-        if(playedCards.peek().getType().equals(Card.Type.DRAW4)) return true;
-        if (player.getPlayerId() != playerTurn) return false;
-        if(card.getType().equals(Card.Type.DRAW4)) return true;
+        if (card.getType().equals(Card.Type.DRAW4) || card.getType().equals(Card.Type.WILD))
+            return true;
+        if (playedCards.isEmpty())
+            return true;
+        if (wildChosenColor != Color.NONE && !card.getColor().toString().equals(wildChosenColor.toString()))
+            return false;
+        if (wildChosenColor != Color.NONE && card.getColor().toString().equals(wildChosenColor.toString()))
+            return true;
+        if (player.getPlayerId() != playerTurn)
+            return false;
+
         return playedCards.peek().getColor().equals(card.getColor()) || Objects.equals(playedCards.peek().getValue(), card.getValue());
     }
 
-    public List<DataResponse> playTurn(GameData data) {
-        List<DataResponse> response = new ArrayList<>();
+    private boolean canDrawFromDeck(Player player) {
+        for (Card c : player.getHand()) {
+            if (validPlay(player, c)) return false;
+        }
+        return true;
+    }
+
+    public List<ResponseImpl> playTurn(GameData data) {
+        List<ResponseImpl> response = new ArrayList<>();
         Player player = findPlayerByPlayerId(data.getPlayerId());
         if (data.getAction() != null && data.getAction().equals("DRAW")) {
-            if(player.getPlayerId() != playerTurn) return response;
+            if (player.getPlayerId() != playerTurn || !canDrawFromDeck(player)) return response;
             List<Card> cards = drawCards(1);
-            response.add(new DataResponse.ResponseBuilder()
+            player.getHand().addAll(cards);
+            playerTurn = nextPlayerId(player);
+            response.add(new ResponseImpl.ResponseBuilder()
                     .type(Response.Type.DRAW)
                     .playerId(player.getPlayerId())
                     .roomId(roomId)
                     .sessionId(player.getSessionId())
                     .cards(cards)
                     .build());
-            response.add(new DataResponse.ResponseBuilder()
+            response.add(new ResponseImpl.ResponseBuilder()
                     .type(Response.Type.STATE)
                     .playerTurn(playerTurn)
                     .state(state.toString())
                     .players(players)
+                    .wildChosenColor(wildChosenColor.toString())
                     .roomId(roomId)
                     .build());
             return response;
@@ -145,20 +170,29 @@ public class Game {
         if (!validPlay(player, card)) return response;
         switch (card.getType()) {
             case DRAW2 -> {
+                wildChosenColor = Color.NONE;
                 List<Card> cards = drawCards(2);
-                Player opponent = findPlayerByPlayerId(player.getPlayerId() == 1 ? 2 : 1);
-                response.add(new DataResponse.ResponseBuilder()
+                Player opponent = findPlayerByPlayerId(nextPlayerId(player));
+                opponent.getHand().addAll(cards);
+                playerTurn = nextPlayerId(player);
+                response.add(new ResponseImpl.ResponseBuilder()
                         .type(Response.Type.DRAW)
                         .playerId(opponent.getPlayerId())
                         .roomId(roomId)
                         .sessionId(opponent.getSessionId())
                         .cards(cards)
                         .build());
+            }
+            case WILD -> {
+                wildChosenColor = Color.valueOf(data.getChosenColor());
             }
             case DRAW4 -> {
                 List<Card> cards = drawCards(4);
-                Player opponent = findPlayerByPlayerId(player.getPlayerId() == 1 ? 2 : 1);
-                response.add(new DataResponse.ResponseBuilder()
+                Player opponent = findPlayerByPlayerId(nextPlayerId(player));
+                opponent.getHand().addAll(cards);
+                wildChosenColor = Color.valueOf(data.getChosenColor());
+                playerTurn = nextPlayerId(player);
+                response.add(new ResponseImpl.ResponseBuilder()
                         .type(Response.Type.DRAW)
                         .playerId(opponent.getPlayerId())
                         .roomId(roomId)
@@ -166,40 +200,55 @@ public class Game {
                         .cards(cards)
                         .build());
             }
-            case NUMBER, REVERSE -> {
-
+            case NUMBER -> {
+                wildChosenColor = Color.NONE;
             }
+
+            case REVERSE -> {
+                wildChosenColor = Color.NONE;
+                direction = direction == Direction.LEFT ? Direction.RIGHT : Direction.LEFT;
+            }
+
             case SKIP -> {
-                playerTurn = playerTurn == 1 ? 2 : 1;
+                wildChosenColor = Color.NONE;
+                playerTurn = nextPlayerId(player);
             }
         }
         player.getHand().remove(card);
-        response.add(new DataResponse.ResponseBuilder()
+        response.add(new ResponseImpl.ResponseBuilder()
                 .type(Response.Type.MOVE)
                 .card(card)
                 .playerId(player.getPlayerId())
                 .roomId(roomId)
                 .build());
-        playerTurn = playerTurn == 1 ? 2 : 1;
-        response.add(new DataResponse.ResponseBuilder()
+        playerTurn = nextPlayerId(findPlayerByPlayerId(playerTurn));
+        response.add(new ResponseImpl.ResponseBuilder()
                 .type(Response.Type.STATE)
                 .playerTurn(playerTurn)
                 .state(state.toString())
                 .players(players)
                 .roomId(roomId)
+                .wildChosenColor(wildChosenColor.toString())
                 .build());
         playedCards.add(card);
         return response;
     }
 
-    private List<DataResponse> generateResponse() {
+    private int nextPlayerId(Player player) {
+        int nextPlayerId = (player.getPlayerId() + direction.val);
+        if (nextPlayerId <= 0) nextPlayerId = players.size();
+        else if (nextPlayerId > players.size()) nextPlayerId = 1;
+        return nextPlayerId;
+    }
+
+    private List<ResponseImpl> generateResponse() {
         return switch (state) {
             case NOT_STARTED -> null;
             case INITIALIZE -> init();
         };
     }
 
-    public List<DataResponse> getResponse() {
+    public List<ResponseImpl> getResponse() {
         return generateResponse();
     }
 
@@ -214,6 +263,25 @@ public class Game {
     public List<Player> getPlayers() {
         return players;
     }
+
+    enum Color {
+        NONE,
+        RED,
+        BLUE,
+        GREEN,
+        YELLOW;
+    }
+
+    public enum Direction {
+        LEFT(-1),
+        RIGHT(1);
+        public final int val;
+
+        Direction(int val) {
+            this.val = val;
+        }
+    }
+
 
     private enum State {
         NOT_STARTED,

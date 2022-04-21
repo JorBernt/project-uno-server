@@ -1,20 +1,19 @@
-package com.jbsoft.unoserver.game;
+package com.jbsoft.unoserver.game.model;
 
 import com.jbsoft.unoserver.Response;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
-public class DataResponse extends Response {
-    private String username, roomId, sessionId, ownerUsername, state;
+public class ResponseImpl extends Response {
+    private String username, roomId, sessionId, ownerUsername, state, wildChosenColor;
     private List<Card> cards;
     private List<Player> players;
     private Card card;
     private int playerId, playerTurn;
     private boolean gameStarted;
 
-    private DataResponse(ResponseBuilder builder) {
+    private ResponseImpl(ResponseBuilder builder) {
         super(builder.type);
         username = builder.username;
         roomId = builder.roomId;
@@ -27,6 +26,7 @@ public class DataResponse extends Response {
         state = builder.state;
         playerTurn = builder.playerTurn;
         gameStarted = builder.gameStarted;
+        wildChosenColor = builder.wildChosenColor;
     }
 
     public String getUsername() {
@@ -117,6 +117,14 @@ public class DataResponse extends Response {
         this.gameStarted = gameStarted;
     }
 
+    public String getWildChosenColor() {
+        return wildChosenColor;
+    }
+
+    public void setWildChosenColor(String wildChosenColor) {
+        this.wildChosenColor = wildChosenColor;
+    }
+
     public void hideCardData() {
         List<Card> newCardList = new ArrayList<>();
         for(Card c : cards) newCardList.add(new Card(c.getId()+100));
@@ -124,7 +132,7 @@ public class DataResponse extends Response {
     }
 
     public static class ResponseBuilder {
-        private String username, roomId, sessionId, ownerUsername, state;
+        private String username, roomId, sessionId, ownerUsername, state, wildChosenColor;
         private List<Card> cards;
         private List<Player> players;
         private Type type;
@@ -194,8 +202,13 @@ public class DataResponse extends Response {
             return this;
         }
 
-        public DataResponse build() {
-            return new DataResponse(this);
+        public ResponseBuilder wildChosenColor(String wildChosenColor) {
+            this.wildChosenColor = wildChosenColor;
+            return this;
+        }
+
+        public ResponseImpl build() {
+            return new ResponseImpl(this);
         }
 
     }

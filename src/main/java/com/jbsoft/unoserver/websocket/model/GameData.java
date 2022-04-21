@@ -1,12 +1,11 @@
 package com.jbsoft.unoserver.websocket.model;
 
-import com.jbsoft.unoserver.game.Card;
-
-import java.util.List;
+import com.jbsoft.unoserver.game.model.Card;
 
 public class GameData {
     private int playerId;
     private Card card;
+    private String chosenColor;
     private String action;
 
     public GameData () { }
@@ -34,6 +33,14 @@ public class GameData {
 
     public void setAction(String action) {
         this.action = action;
+    }
+
+    public String getChosenColor() {
+        return chosenColor;
+    }
+
+    public void setChosenColor(String chosenColor) {
+        this.chosenColor = chosenColor;
     }
 }
 

@@ -1,4 +1,4 @@
-package com.jbsoft.unoserver.game;
+package com.jbsoft.unoserver.game.model;
 
 import com.jbsoft.unoserver.Response;
 import java.util.ArrayList;
@@ -70,8 +70,8 @@ public class Player {
         hand.add(card);
     }
 
-    public DataResponse getConfig() {
-        return new DataResponse.ResponseBuilder()
+    public ResponseImpl getConfig() {
+        return new ResponseImpl.ResponseBuilder()
                 .type(Response.Type.CONFIG)
                 .username(username)
                 .roomId(roomId)

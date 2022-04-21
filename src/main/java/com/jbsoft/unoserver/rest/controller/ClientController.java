@@ -1,6 +1,6 @@
 package com.jbsoft.unoserver.rest.controller;
 
-import com.jbsoft.unoserver.game.GameManager;
+import com.jbsoft.unoserver.game.services.GameManager;
 import com.jbsoft.unoserver.rest.model.BoolResponse;
 import com.jbsoft.unoserver.rest.model.RoomId;
 import org.springframework.web.bind.annotation.*;

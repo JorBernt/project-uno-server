@@ -1,6 +1,6 @@
-package com.jbsoft.unoserver.game;
+package com.jbsoft.unoserver.game.services;
 
-import com.jbsoft.unoserver.Response;
+import com.jbsoft.unoserver.game.model.ResponseImpl;
 import com.jbsoft.unoserver.websocket.model.GameData;
 
 import java.util.HashMap;
@@ -38,11 +38,10 @@ public class GameManager {
         Game game = runningGames.get(roomId);
         if (game == null) return false;
         game.addPlayer(username, sessionId);
-        System.out.println("Owner: " + game.getOwnerUserName());
         return true;
     }
 
-    public DataResponse getState(String roomId) {
+    public ResponseImpl getState(String roomId) {
         Game game = runningGames.get(roomId);
         if (game == null) {
             return null;
@@ -50,20 +49,20 @@ public class GameManager {
         return game.getState();
     }
 
-    public List<DataResponse> updateState(String roomId, GameData data) {
+    public List<ResponseImpl> updateState(String roomId, GameData data) {
         Game game = runningGames.get(roomId);
         if (game == null) return null;
         return game.playTurn(data);
     }
 
-    public DataResponse connectPlayer(String username, String roomId, String sessionId) {
+    public ResponseImpl connectPlayer(String username, String roomId, String sessionId) {
         Game game = runningGames.get(roomId);
         if (game == null) return null;
         game.connectPlayerToWebSocket(username, roomId, sessionId);
         return game.getPlayerConfig(sessionId);
     }
 
-    public DataResponse getPlayerConfig(String roomId, String sessionId) {
+    public ResponseImpl getPlayerConfig(String roomId, String sessionId) {
         Game game = runningGames.get(roomId);
         if (game == null) return null;
         return game.getPlayerConfig(sessionId);
@@ -79,7 +78,7 @@ public class GameManager {
         return runningGames.containsKey(roomId);
     }
 
-    public List<DataResponse> startGame(String roomId) {
+    public List<ResponseImpl> startGame(String roomId) {
         Game game = runningGames.get(roomId);
         if (game == null) return null;
         game.start();
