@@ -1,16 +1,11 @@
 package com.jbsoft.unoserver.websocket;
 
-import com.jbsoft.unoserver.game.GameManager;
-import com.jbsoft.unoserver.game.GameState;
-import com.jbsoft.unoserver.game.Player;
-import com.jbsoft.unoserver.game.PlayerConfig;
 import com.jbsoft.unoserver.websocket.model.ChatMessage;
 import static com.jbsoft.unoserver.websocket.model.ChatMessage.MessageType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
-import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;

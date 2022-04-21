@@ -1,9 +1,12 @@
 package com.jbsoft.unoserver.game;
 
 import com.jbsoft.unoserver.Response;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Player {
     private String username, roomId, sessionId;
+    private List<Card> hand;
     private int playerId;
 
     public Player(String username, String roomId, String sessionId, int playerId) {
@@ -11,6 +14,7 @@ public class Player {
         this.roomId = roomId;
         this.sessionId = sessionId;
         this.playerId = playerId;
+        hand = new ArrayList<>();
     }
 
     public Player(String username, int playerId) {
@@ -50,7 +54,29 @@ public class Player {
         this.playerId = playerId;
     }
 
-    public PlayerConfig getConfig() {
-        return new PlayerConfig(Response.Type.CONFIG, username, roomId, sessionId, playerId);
+    public List<Card> getHand() {
+        return hand;
+    }
+
+    public void setHand(List<Card> hand) {
+        this.hand = hand;
+    }
+
+    public void addCardsToHand(List<Card> cards) {
+        hand.addAll(cards);
+    }
+
+    public void addCardToHand(Card card) {
+        hand.add(card);
+    }
+
+    public DataResponse getConfig() {
+        return new DataResponse.ResponseBuilder()
+                .type(Response.Type.CONFIG)
+                .username(username)
+                .roomId(roomId)
+                .sessionId(sessionId)
+                .playerId(playerId)
+                .build();
     }
 }

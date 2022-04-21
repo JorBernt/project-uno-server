@@ -10,8 +10,8 @@ public class ClientController {
 
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/createNewGame")
-    public RoomId createNewGame(String username, String sessionId) {
-        String id = GameManager.the().createNewGame(username, sessionId);
+    public RoomId createNewGame(String sessionId) {
+        String id = GameManager.the().createNewGame(null, sessionId);
         return new RoomId(id);
     }
 
@@ -29,5 +29,11 @@ public class ClientController {
         return new BoolResponse(joined);
     }
 
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/checkValidRoomId")
+    public BoolResponse checkValidRoomId(String roomId) {
+        boolean joined = GameManager.the().containsRoom(roomId);
+        return new BoolResponse(joined);
+    }
 
 }

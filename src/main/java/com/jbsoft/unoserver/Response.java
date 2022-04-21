@@ -5,7 +5,8 @@ abstract public class Response {
     public enum Type {
         MOVE,
         STATE,
-        CONFIG
+        CONFIG,
+        DRAW
     }
     protected Type type;
 
