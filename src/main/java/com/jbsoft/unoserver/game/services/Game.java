@@ -1,10 +1,10 @@
 package com.jbsoft.unoserver.game.services;
 
 import com.jbsoft.unoserver.Response;
-import com.jbsoft.unoserver.game.utility.GameDataInit;
 import com.jbsoft.unoserver.game.model.Card;
-import com.jbsoft.unoserver.game.model.ResponseImpl;
 import com.jbsoft.unoserver.game.model.Player;
+import com.jbsoft.unoserver.game.model.ResponseImpl;
+import com.jbsoft.unoserver.game.utility.GameDataInit;
 import com.jbsoft.unoserver.websocket.model.GameData;
 
 import java.io.IOException;
@@ -21,20 +21,23 @@ public class Game {
     private Stack<Card> deck;
     private int playerIdCounter = 1;
     private boolean running = false;
-    private State state = State.NOT_STARTED;
     private int playerTurn = 1;
     private Direction direction = Direction.LEFT;
     private Color wildChosenColor = Color.NONE;
+    private final boolean bot;
 
-    public Game(String roomId, String ownerUserName) {
+    public Game(String roomId, String ownerUserName, boolean bot) {
         this.roomId = roomId;
         this.ownerUserName = ownerUserName;
+        this.bot = bot;
     }
 
     public void addPlayer(String username, String sessionId) {
-        if (ownerUserName == null)
+        if (ownerUserName == null) {
             ownerUserName = username;
+        }
         players.add(new Player(username, roomId, sessionId, playerIdCounter++));
+        if (bot) addBot();
     }
 
     public Player findPlayerByPlayerId(int id) {
@@ -75,16 +78,18 @@ public class Game {
                 .roomId(roomId)
                 .ownerUsername(ownerUserName)
                 .players(players)
-                .state(state.toString())
                 .playerTurn(playerTurn)
                 .gameStarted(running)
                 .wildChosenColor(wildChosenColor.toString())
                 .build();
     }
 
+    private void addBot() {
+        players.add(new Bot("BOT", playerIdCounter++));
+    }
+
     public void start() {
         running = true;
-        state = State.INITIALIZE;
         try {
             deck = GameDataInit.getDeck();
         } catch (IOException e) {
@@ -105,8 +110,6 @@ public class Game {
         for (Player p : players) {
             List<Card> cards = drawCards(7);
             p.addCardsToHand(cards);
-            cards.add(deck.stream().filter(c -> c.getType().equals(Card.Type.DRAW4)).findFirst().get());
-
             System.out.println("cardsize" + cards.size());
             responses.add(new ResponseImpl.ResponseBuilder()
                     .type(Response.Type.DRAW)
@@ -119,7 +122,7 @@ public class Game {
         return responses;
     }
 
-    private boolean validPlay(Player player, Card card) {
+    public boolean validPlay(Player player, Card card) {
         if (card.getType().equals(Card.Type.DRAW4) || card.getType().equals(Card.Type.WILD))
             return true;
         if (playedCards.isEmpty())
@@ -148,7 +151,6 @@ public class Game {
             if (player.getPlayerId() != playerTurn || !canDrawFromDeck(player)) return response;
             List<Card> cards = drawCards(1);
             player.getHand().addAll(cards);
-            playerTurn = nextPlayerId(player);
             response.add(new ResponseImpl.ResponseBuilder()
                     .type(Response.Type.DRAW)
                     .playerId(player.getPlayerId())
@@ -159,7 +161,6 @@ public class Game {
             response.add(new ResponseImpl.ResponseBuilder()
                     .type(Response.Type.STATE)
                     .playerTurn(playerTurn)
-                    .state(state.toString())
                     .players(players)
                     .wildChosenColor(wildChosenColor.toString())
                     .roomId(roomId)
@@ -225,12 +226,17 @@ public class Game {
         response.add(new ResponseImpl.ResponseBuilder()
                 .type(Response.Type.STATE)
                 .playerTurn(playerTurn)
-                .state(state.toString())
                 .players(players)
                 .roomId(roomId)
                 .wildChosenColor(wildChosenColor.toString())
                 .build());
         playedCards.add(card);
+
+        while (findPlayerByPlayerId(playerTurn) instanceof Bot bot) {
+            response.addAll(bot.playTurn(this));
+            playerTurn = nextPlayerId(bot);
+        }
+
         return response;
     }
 
@@ -242,10 +248,7 @@ public class Game {
     }
 
     private List<ResponseImpl> generateResponse() {
-        return switch (state) {
-            case NOT_STARTED -> null;
-            case INITIALIZE -> init();
-        };
+        return init();
     }
 
     public List<ResponseImpl> getResponse() {
@@ -282,9 +285,16 @@ public class Game {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Game game = (Game) o;
+        return playerIdCounter == game.playerIdCounter && running == game.running && playerTurn == game.playerTurn && bot == game.bot && Objects.equals(roomId, game.roomId) && Objects.equals(players, game.players) && Objects.equals(playedCards, game.playedCards) && Objects.equals(ownerUserName, game.ownerUserName) && Objects.equals(deck, game.deck) && direction == game.direction && wildChosenColor == game.wildChosenColor;
+    }
 
-    private enum State {
-        NOT_STARTED,
-        INITIALIZE,
+    @Override
+    public int hashCode() {
+        return Objects.hash(roomId, players, playedCards, ownerUserName, deck, playerIdCounter, running, playerTurn, direction, wildChosenColor, bot);
     }
 }

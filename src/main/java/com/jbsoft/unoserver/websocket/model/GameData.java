@@ -7,8 +7,24 @@ public class GameData {
     private Card card;
     private String chosenColor;
     private String action;
+    private String sessionId;
 
     public GameData () { }
+
+    public GameData(int playerId, Card card, String chosenColor, String action, String sessionId) {
+        this.playerId = playerId;
+        this.card = card;
+        this.chosenColor = chosenColor;
+        this.action=action;
+        this.sessionId = sessionId;
+    }
+
+    public GameData(int playerId, Card card, String chosenColor, String action) {
+        this.playerId = playerId;
+        this.card = card;
+        this.chosenColor = chosenColor;
+        this.action=action;
+    }
 
 
     public int getPlayerId() {
@@ -41,6 +57,14 @@ public class GameData {
 
     public void setChosenColor(String chosenColor) {
         this.chosenColor = chosenColor;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 }
 

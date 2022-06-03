@@ -11,7 +11,7 @@ public class ResponseImpl extends Response {
     private List<Player> players;
     private Card card;
     private int playerId, playerTurn;
-    private boolean gameStarted;
+    private boolean gameStarted, valid;
 
     private ResponseImpl(ResponseBuilder builder) {
         super(builder.type);
@@ -27,6 +27,7 @@ public class ResponseImpl extends Response {
         playerTurn = builder.playerTurn;
         gameStarted = builder.gameStarted;
         wildChosenColor = builder.wildChosenColor;
+        valid = builder.valid;
     }
 
     public String getUsername() {
@@ -131,13 +132,21 @@ public class ResponseImpl extends Response {
         cards = newCardList;
     }
 
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
+    }
+
     public static class ResponseBuilder {
         private String username, roomId, sessionId, ownerUsername, state, wildChosenColor;
         private List<Card> cards;
         private List<Player> players;
         private Type type;
         private Card card;
-        private boolean gameStarted = true;
+        private boolean gameStarted = true, valid;
         private int playerId, playerTurn;
 
         public ResponseBuilder() { }
@@ -204,6 +213,11 @@ public class ResponseImpl extends Response {
 
         public ResponseBuilder wildChosenColor(String wildChosenColor) {
             this.wildChosenColor = wildChosenColor;
+            return this;
+        }
+
+        public ResponseBuilder valid(boolean valid) {
+            this.valid = valid;
             return this;
         }
 

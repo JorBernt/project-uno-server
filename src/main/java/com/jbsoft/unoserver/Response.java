@@ -6,7 +6,8 @@ abstract public class Response {
         MOVE,
         STATE,
         CONFIG,
-        DRAW
+        DRAW,
+        VALIDATE_PLAY
     }
     protected Type type;
 

@@ -13,22 +13,21 @@ import static com.jbsoft.unoserver.utility.Randomizer.generateID;
 public class GameManager {
     private static GameManager the = null;
 
-    private static Map<String, Game> runningGames = new HashMap<>();
-    private final Random random = new Random();
+    private static final Map<String, Game> runningGames = new HashMap<>();
 
     public GameManager() {
     }
 
     public static GameManager the() {
-        return the == null ? new GameManager() : the;
+        return the = the == null ? new GameManager() : the;
     }
 
-    public String createNewGame(String ownerUserName, String sessionId) {
+    public String createNewGame(String ownerUserName, String sessionId, boolean bot) {
         String roomId = generateID();
         while (runningGames.containsKey(roomId)) {
             roomId = generateID();
         }
-        Game game = new Game(roomId, ownerUserName);
+        Game game = new Game(roomId, ownerUserName, bot);
         runningGames.put(roomId, game);
         System.out.println(runningGames.size());
         return roomId;

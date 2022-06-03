@@ -1,6 +1,7 @@
 package com.jbsoft.unoserver.game.model;
 
 import com.jbsoft.unoserver.Response;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class Player {
     }
 
     public Player(String username, int playerId) {
+        this(username, null, null, playerId);
         this.username = username;
         this.playerId = playerId;
     }
@@ -39,7 +41,7 @@ public class Player {
     }
 
     public String getSessionId() {
-        return sessionId;
+        return sessionId == null ? "" : sessionId;
     }
 
     public void setSessionId(String sessionId) {
