@@ -14,6 +14,10 @@ public class Bot extends Player {
     }
 
     public List<ResponseImpl> playTurn(Game game) {
+        try {
+            Thread.sleep(500);
+        }
+        catch (Exception e) { }
         Card card = null;
         String chosenColor = "";
         for (Card c : getHand()) {
